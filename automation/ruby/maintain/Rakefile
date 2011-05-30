@@ -1,0 +1,175 @@
+$LOAD_PATH.unshift(File.dirname(__FILE__) + '/lib')
+
+require 'rubygems'
+require 'bundler'
+Bundler.setup
+require 'thor'
+require 'nokogiri'
+require 'net/https'
+require 'net/ssh'
+require 'net/scp'
+require 'open-uri'
+
+class DeployHelper < Bundler::GemHelper
+  # override
+  def self.install_tasks(opts = nil)
+    dir = caller.find { |c| /Rakefile:/ }[/^(.*?)\/Rakefile:/, 1]
+    self.new(dir, opts && opts[:name]).install
+  end
+
+  # override
+  def initialize(base, name = nil)
+    Bundler.ui = Bundler::UI::Shell.new(Thor::Shell::Color.new)
+    @base = base
+  end
+
+  # override
+  def install
+    [:production, :qa].each do |env|
+      desc "=[ #{env.to_s.gsub('_', ' ').upcase} ]="
+      task env do
+        Bundler.ui.warn "Use: rake <env>:task"
+      end
+      namespace env do
+        task :environment do
+          @environment = env.to_s
+        end
+
+        desc "Verify #{name} (#{version}) to #{env.to_s}"
+        task :verify => :environment do
+          verify
+        end
+
+        desc "Backup DB #{name} (#{version}) to #{env.to_s}"
+        task :verify => :environment do
+          verify
+        end
+
+        desc "Rollback #{name} (#{version}) to #{env.to_s}"
+        task :rollback => :environment do
+          rollback
+        end
+
+      end
+    end
+
+  end
+
+  # override
+  def version
+    @version ||= ENV['VERSION']
+    @version ||= get_project_version
+  end
+
+  def get_project_version
+    Bundler.ui.info "Enter what version you wish to deploy: "
+    v = STDIN.gets
+    v.strip
+  end
+
+  # override
+  def name
+    @name ||= config['application']['name']
+  end
+
+  def environment
+    @environment
+  end
+
+  def artifact_url
+    "#{config['repository']['url']}/#{config['application']['group_id'].gsub(".", "/")}/#{config['application']['artifact_id']}/#{version}/#{config['application']['artifact_id']}-#{version}.jar" #haq
+  end
+
+  def artifact
+    "target/roots-example.jar"
+  end
+
+  def config
+    @config ||= YAML::load_file(File.dirname(__FILE__) + '/config/config.yml')
+  end
+
+  def cfg(key)
+    config[@environment][key.to_s]
+  end
+
+  # Convenience methods for reading configured values
+  [:user, :prefix, :hosts, :database].each do |m|
+    define_method m do
+      cfg(m)
+    end
+  end
+
+  ###
+  ### Configure
+  ###
+
+  def backup_db
+    Net::SSH.start(database['host'], user) do |ssh|
+      target_file = "#{prefix}/sql/#{database['db']}.#{Time.now.strftime('%Y%m%d%H%M')}.sql"
+      Bundler.ui.warn "Backing up database... on #{database['host']} to #{target_file}"
+      ssh.exec!("mysqldump -u#{database['username']} -p#{database['password']} #{database['db']} > #{target_file}")
+    end
+  end
+
+  def verify
+    running_version = get_http(cfg(:version_url))
+    healthcheck_response = get_http(cfg(:healthcheck_url))
+
+    dont_include = cfg(:healthcheck_dont_include) || 'FAIL'
+
+    if (running_version != version)
+      Bundler.ui.error "Version FAILED. Expected new running version was '#{version}', actual is '#{running_version}'"
+    else
+      Bundler.ui.confirm "Version OK! ('#{running_version}')"
+    end
+
+    if (healthcheck_response.include? dont_include)
+      Bundler.ui.error "Health FAILED. Response should not include '#{dont_include}', response was:\n#{healthcheck_response}"
+    else
+      Bundler.ui.confirm "Health OK! (Doesn't contain '#{dont_include}')"
+    end
+
+  end
+
+  def get_http(urlstring)
+    begin
+      uri = URI.parse(urlstring)
+      http = Net::HTTP.new(uri.host, uri.port)
+      http.read_timeout = 5
+      http.open_timeout = 5
+
+      if (uri.scheme == 'https')
+        http.use_ssl = true
+        http.ssl_timeout = 5
+        http.verify_mode = OpenSSL::SSL::VERIFY_NONE
+      end
+      req = Net::HTTP::Get.new(uri.request_uri)
+      if (uri.user)
+        req.basic_auth uri.user, uri.password
+      end
+
+      http.request(req).body
+    rescue Exception => e
+      return "#{e.class}: #{e.message}"
+    end
+  end
+
+  def rollback
+    if (cfg(:rollback))
+      Bundler.ui.warn "Warning: Rolling back to previous release"
+      hosts.each do |host|
+        Net::SSH.start(host, user) do |ssh|
+          ssh.exec!("mv #{prefix}/apps/#{name}/#{name}.jar.previous #{prefix}/apps/#{name}/#{name}.jar")
+          ssh.exec(cfg(:restart_command))
+        end
+      end
+    else
+      Bundler.ui.warn "Rollback is disabled for #{environment}. Perform manual rollback."
+    end
+  end
+
+end
+
+DeployHelper.install_tasks
+
+Dir["#{File.dirname(__FILE__)}/*/Rakefile"].each { |f| load f }

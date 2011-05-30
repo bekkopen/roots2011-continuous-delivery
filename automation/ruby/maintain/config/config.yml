@@ -1,0 +1,22 @@
+repository:
+  url:  http://mgmt.muda.no:8081/nexus/content/repositories/releases
+  type: m2
+
+application:
+  name:        roots-example
+  group_id:    bekkopen.roots
+  artifact_id: jetty-pkg
+
+production:
+  hosts:           [node1.muda.no, node2.muda.no]
+  user:            roots
+  prefix:          /srv/roots/verify
+  restart_command: sudo service roots-example reload
+  start_command:   sudo service roots-example start
+  stop_command:    sudo service roots-example stop
+  healthcheck_url: http://www.muda.no/health.html
+  database:
+    host:     db1.muda.no
+    username: roots
+    password: roots123
+    db:       roots

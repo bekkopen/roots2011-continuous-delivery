@@ -1,0 +1,31 @@
+Port <%= port %>
+Protocol 2
+SyslogFacility AUTHPRIV
+<% if allow_users.any? %>
+AllowUsers <%= allow_users.join(" ") %>
+<% end %>
+# Security
+PermitRootLogin yes        # Could be disabled...
+PasswordAuthentication yes # Should be disabled.
+PermitEmptyPasswords no
+PubkeyAuthentication yes
+ChallengeResponseAuthentication no
+StrictModes yes
+LoginGraceTime 2m          # 2m seems ok
+MaxAuthTries 3             # grace after 3 errors
+ClientAliveInterval 600    # log out after 10mins idletime
+ClientAliveCountMax 0
+IgnoreRhosts yes
+HostbasedAuthentication no
+HostKey /etc/ssh/ssh_host_rsa_key
+HostKey /etc/ssh/ssh_host_dsa_key
+KeyRegenerationInterval 3600 # Don't regenerate too keys often (speed up sshd)
+ServerKeyBits 768
+UsePAM yes
+AuthorizedKeysFile	.ssh/authorized_keys
+GSSAPIAuthentication yes
+GSSAPICleanupCredentials yes
+AcceptEnv LANG LC_CTYPE LC_NUMERIC LC_TIME LC_COLLATE LC_MONETARY LC_MESSAGES
+AcceptEnv LC_PAPER LC_NAME LC_ADDRESS LC_TELEPHONE LC_MEASUREMENT
+AcceptEnv LC_IDENTIFICATION LC_ALL
+Subsystem	sftp	/usr/libexec/openssh/sftp-server

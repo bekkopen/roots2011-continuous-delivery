@@ -1,0 +1,3 @@
+[submodule "modules/puppet-concat"]
+	path = modules/puppet-concat
+	url = https://github.com/ripienaar/puppet-concat.git

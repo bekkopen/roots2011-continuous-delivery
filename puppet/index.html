@@ -1,0 +1,2311 @@
+<!DOCTYPE html>
+<!--
+  Copyright 2010 Google Inc.
+
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+
+     http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+
+  Original slides: Marcin Wichary (mwichary@google.com)
+  Modifications: Ernest Delgado (ernestd@google.com)
+                 Alex Russell (slightlyoff@chromium.org)
+
+  landslide modifications: Adam Zapletal (adamzap@gmail.com)
+                           Nicolas Perriault (nperriault@gmail.com)
+-->
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <title>Declarative Configuration Management with&nbsp;Puppet</title>
+    <!-- Styles -->
+    
+    <style type="text/css" media="print">
+      * {
+    margin: 0;
+    padding: 0;
+}
+@page {
+    size: landscape;
+}
+body {
+    font: 100% "Lucida Grande", "Trebuchet MS", Verdana, sans-serif;
+    padding: 0;
+    margin: 0;
+}
+div.slide {
+    min-width: 800px;
+    min-height: 600px;
+    padding: 1em;
+    overflow: hidden;
+    page-break-after: always;
+    border: 1px solid black;
+    border-radius: 20px;
+}
+div.slide div.inner {
+    width: 800px;
+    height: 600px;
+    margin: auto;
+    display: table-cell;
+}
+h1 {
+    font-size: 2.4em;
+}
+h2 {
+    font-size: 1.4em;
+}
+h3 {
+    margin: 1em 0;
+}
+ul {
+    margin: 0;
+    padding: 0;
+}
+p, li, pre {
+    margin: 1em 0;
+}
+li {
+    margin-left: 2em;
+}
+a {
+    color: #000000;
+}
+pre, code {
+    max-width: 800px;
+    background: #eee;
+    font-family: Monaco, monospace;
+    font-size: 90%;
+}
+pre {
+    padding: .2em .5em;
+    overflow: hidden;
+    border-radius: .8em;
+}
+code {
+    padding: 0 .2em;
+}
+.slide header:only-child h1 {
+  line-height: 180%;
+  text-align: center;
+  display: table-cell;
+  vertical-align: middle;
+  height: 600px;
+  width: 800px;
+  font-size: 48px;
+  margin-top:100px;
+  margin-bottom:100px;
+}
+#toc, #help, .slide aside, .slide footer, .slide .notes {
+  display: none;
+}
+
+    </style>
+    <style type="text/css" media="screen, projection">
+      body {
+  font: 14px "Lucida Grande", "Trebuchet MS", Verdana, sans-serif;
+  background: #778;
+  padding: 0;
+  margin: 0;
+  overflow: hidden;
+}
+
+div.presentation {
+  position: absolute;
+  width: 100%;
+  display: table-cell;
+  vertical-align: middle;
+  height: 100%;
+  background: inherit;
+}
+
+div.slides {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  left: 0;
+  top: 0;
+  position: absolute;
+  display: block;
+  background-color: #fff;
+  -webkit-transition: -webkit-transform 1s ease-in-out;
+  -moz-transition: -moz-transform 1s ease-in-out;
+  -o-transition: -o-transform 1s ease-in-out;
+}
+
+div.slide {
+  display: none;
+  position: absolute;
+  overflow: hidden;
+  width: 900px;
+  height: 700px;
+  left: 50%;
+  top: 50%;
+  margin-top: -350px;
+  background: -webkit-gradient(linear, left bottom, left top, from(#fff), to(#eeeeec));
+  background-color: #eee;
+  background: -moz-linear-gradient(bottom, #fff, #eeeeec);
+  -webkit-transition: margin 0.25s ease-in-out;
+  -moz-transition: margin 0.25s ease-in-out;
+  -o-transition: margin 0.25s ease-in-out;
+  border-top-right-radius: 20px;
+  -moz-border-radius-topright: 20px;
+  -webkit-border-top-right-radius: 20px;
+  border-bottom-left-radius: 0px;
+  -moz-border-radius-bottomleft: 0px;
+  -webkit-border-bottom-left-radius: 0px;
+  border-top-left-radius: 20px;
+  -moz-border-radius-topleft: 20px;
+  -webkit-border-top-left-radius: 20px;
+  border-bottom-right-radius: 0px;
+  -moz-border-radius-bottomright: 0px;
+  -webkit-border-bottom-right-radius: 0px;
+
+}
+
+div.slide p {
+  font-size: 20px;
+}
+
+.slide.far-past {
+  display: block;
+  margin-left: -2400px;
+}
+
+.slide.past {
+  display: block;
+  margin-left: -1400px;
+}
+
+.slide.current {
+  display: block;
+  margin-left: -450px;
+}
+
+.slide.future {
+  display: block;
+  margin-left: 500px;
+}
+
+.slide.far-future {
+  display: block;
+  margin-left: 1500px;
+}
+
+body.three-d div.slides {
+  -webkit-transform: translateX(50px) scale(0.8) rotateY(10deg);
+  -moz-transform: translateX(50px) scale(0.8) rotateY(10deg);
+  -o-transform: translateX(50px) scale(0.8) rotateY(10deg);
+}
+
+
+/* Content */
+
+header:not(:only-child) {
+  font-family: 'Lucida Grande';
+  font-weight: normal;
+  font-size: 50px;
+  letter-spacing: -.05em;
+  color: white;
+  color: black;
+  text-shadow: rgba(0, 0, 0, 0.2) 0 2px 5px;
+  position: absolute;
+  left: 30px;
+  top: 25px;
+  margin: 0;
+  padding: 0;
+}
+
+header h1, header h2, header h3, header h4, header h5, header h6 {
+  display: inline;
+  font-size: 100%;
+  font-weight: normal;
+  padding: 0;
+  margin: 0;
+}
+
+header h2:first-child {
+  margin-top: 0;
+}
+
+section, .slide header:only-child h1 {
+  font-family: 'Lucida Grande';
+  color: #3f3f3f;
+  text-shadow: rgba(0, 0, 0, 0.2) 0 2px 5px;
+  margin-left: 30px;
+  margin-right: 30px;
+  margin-top: 100px;
+  display: block;
+  overflow: hidden;
+}
+
+a {
+  color: inherit;
+  display: inline-block;
+  text-decoration: none;
+  line-height: 110%;
+  border-bottom: 2px solid #3f3f3f;
+}
+
+pre {
+  font-size: 16px;
+  font-family: Monaco, Courier, monospace;
+}
+
+li {
+  padding: 10px 0;
+  font-size: 20px;
+}
+
+.slide header:only-child h1 {
+  line-height: 180%;
+  text-align: center;
+  display: table-cell;
+  vertical-align: middle;
+  height: 700px;
+  width: 900px;
+  font-size: 50px;
+  margin-top:100px;
+  margin-bottom:100px;
+}
+
+.sidebar {
+  background: -webkit-gradient(linear, top right, bottom right, from(#dde), to(#fff));
+  -webkit-transition: margin 0.25s ease-in-out;
+  background-color: #eee;
+  background: -moz-linear-gradient(right, #dde, #fff);
+  border-right: 5px solid #ccd;
+  z-index: 9999999;
+  height: 100%;
+  overflow: hidden;
+  top: 0;
+  position: absolute;
+  display: block;
+  margin: 0;
+  margin-left: -400px;
+  padding: 10px 16px;
+  overflow: auto;
+  -webkit-transition: margin 0.2s ease-in-out;
+  -moz-transition: margin 0.2s ease-in-out;
+  -o-transition: margin 0.2s ease-in-out;
+}
+
+.sidebar h2 {
+  text-shadow: rgba(0, 0, 0, 0.2) 0 2px 5px;
+  margin: 0 0 16px;
+  padding: 0;
+}
+
+.sidebar table {
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  border-collapse: collapse;
+}
+
+.sidebar table caption {
+  display: none;
+}
+
+.sidebar tr {
+  margin: 2px 0;
+  border-bottom: 1px solid #ccc;
+}
+
+.sidebar th {
+  text-align: left;
+  font-weight: normal;
+  max-width: 300px;
+  overflow: hidden;
+}
+
+.sidebar tr.sub th {
+  text-indent: 20px;
+}
+
+.sidebar td {
+  text-align: right;
+  min-width: 20px;
+}
+
+.sidebar a {
+  display: block;
+  text-decoration: none;
+  border-bottom: none;
+  padding: 4px 0;
+}
+
+.sidebar tr.active {
+  background: #ff0;
+}
+
+aside {
+  display: none;
+}
+  aside.source {
+    position: absolute;
+    bottom: 6px;
+    left: 10px;
+    text-indent: 10px;
+  }
+  aside.page_number {
+    position: absolute;
+    bottom: 6px;
+    right: 10px;
+    text-indent: 10px;
+  }
+
+.notes {
+  display: none;
+  padding: 10px;
+  background: #ccc;
+  border-radius: 10px;
+  -moz-border-radius: 10px;
+  -webkit-border-radius: 10px;
+}
+  div.slide p.notes {
+    font-size: 90%;
+}
+
+img { display: block; margin: auto; }
+
+/* Expose */
+
+body.expose div.slides {
+  float: left;
+  position: relative;
+  overflow: auto;
+  margin-bottom: 10px;
+}
+
+body.expose div.slide {
+  display: block;
+  float: left;
+  position: relative;
+  left: auto !important;
+  top: auto !important;
+  margin: 10px !important;
+  -webkit-transition: none;
+  -moz-transition: none;
+  -o-transition: none;  
+  -moz-transform: scale(.33, .33);
+  -moz-transform-origin: 0 0;
+  -webkit-transform: scale(.33, .33);
+  -webkit-transform-origin: 0 0;
+  -o-transform: scale(.33, .33);
+  -o-transform-origin: 0 0;
+  cursor: pointer;
+}
+
+body.expose div.slide:hover {
+  background: -webkit-gradient(linear, left bottom, left top, from(#bdd), to(#fff));
+  background-color: #eee;
+  background: -moz-linear-gradient(bottom, #bdd, #fff);
+}
+
+body.expose .slide-wrapper {
+  float: left;
+  position: relative;
+  margin: .5%;
+  width: 300px;
+  height: 233px;
+}
+
+body.expose .slide footer {
+}
+
+body.expose .slide .inner {
+}
+
+body.expose .slide.far-past,
+body.expose .slide.past,
+body.expose .slide.future,
+body.expose .slide.far-future {
+  margin-left: 0;
+}
+
+body.expose .slide.current {
+  background: -webkit-gradient(linear, left bottom, left top, from(#ddb), to(#fff));
+  background-color: #eee;
+  background: -moz-linear-gradient(bottom, #ddb, #fff);
+  border: 16px solid #fff;
+  -moz-transform: scale(.315, .315);
+  -moz-transform-origin: 0 0;
+  -webkit-transform: scale(.315, .315);
+  -webkit-transform-origin: 0 0;
+  -o-transform: scale(.315, .315);
+  -o-transform-origin: 0 0;
+}
+
+/* Pygments default theme */
+.hll { background-color: #ffffcc }
+.c { color: #408080; font-style: italic } /* Comment */
+.err { border: 1px solid #FF0000 } /* Error */
+.k { color: #008000; font-weight: bold } /* Keyword */
+.o { color: #666666 } /* Operator */
+.cm { color: #408080; font-style: italic } /* Comment.Multiline */
+.cp { color: #BC7A00 } /* Comment.Preproc */
+.c1 { color: #408080; font-style: italic } /* Comment.Single */
+.cs { color: #408080; font-style: italic } /* Comment.Special */
+.gd { color: #A00000 } /* Generic.Deleted */
+.ge { font-style: italic } /* Generic.Emph */
+.gr { color: #FF0000 } /* Generic.Error */
+.gh { color: #000080; font-weight: bold } /* Generic.Heading */
+.gi { color: #00A000 } /* Generic.Inserted */
+.go { color: #808080 } /* Generic.Output */
+.gp { color: #000080; font-weight: bold } /* Generic.Prompt */
+.gs { font-weight: bold } /* Generic.Strong */
+.gu { color: #800080; font-weight: bold } /* Generic.Subheading */
+.gt { color: #0040D0 } /* Generic.Traceback */
+.kc { color: #008000; font-weight: bold } /* Keyword.Constant */
+.kd { color: #008000; font-weight: bold } /* Keyword.Declaration */
+.kn { color: #008000; font-weight: bold } /* Keyword.Namespace */
+.kp { color: #008000 } /* Keyword.Pseudo */
+.kr { color: #008000; font-weight: bold } /* Keyword.Reserved */
+.kt { color: #B00040 } /* Keyword.Type */
+.m { color: #666666 } /* Literal.Number */
+.s { color: #BA2121 } /* Literal.String */
+.na { color: #7D9029 } /* Name.Attribute */
+.nb { color: #008000 } /* Name.Builtin */
+.nc { color: #0000FF; font-weight: bold } /* Name.Class */
+.no { color: #880000 } /* Name.Constant */
+.nd { color: #AA22FF } /* Name.Decorator */
+.ni { color: #999999; font-weight: bold } /* Name.Entity */
+.ne { color: #D2413A; font-weight: bold } /* Name.Exception */
+.nf { color: #0000FF } /* Name.Function */
+.nl { color: #A0A000 } /* Name.Label */
+.nn { color: #0000FF; font-weight: bold } /* Name.Namespace */
+.nt { color: #008000; font-weight: bold } /* Name.Tag */
+.nv { color: #19177C } /* Name.Variable */
+.ow { color: #AA22FF; font-weight: bold } /* Operator.Word */
+.w { color: #bbbbbb } /* Text.Whitespace */
+.mf { color: #666666 } /* Literal.Number.Float */
+.mh { color: #666666 } /* Literal.Number.Hex */
+.mi { color: #666666 } /* Literal.Number.Integer */
+.mo { color: #666666 } /* Literal.Number.Oct */
+.sb { color: #BA2121 } /* Literal.String.Backtick */
+.sc { color: #BA2121 } /* Literal.String.Char */
+.sd { color: #BA2121; font-style: italic } /* Literal.String.Doc */
+.s2 { color: #BA2121 } /* Literal.String.Double */
+.se { color: #BB6622; font-weight: bold } /* Literal.String.Escape */
+.sh { color: #BA2121 } /* Literal.String.Heredoc */
+.si { color: #BB6688; font-weight: bold } /* Literal.String.Interpol */
+.sx { color: #008000 } /* Literal.String.Other */
+.sr { color: #BB6688 } /* Literal.String.Regex */
+.s1 { color: #BA2121 } /* Literal.String.Single */
+.ss { color: #19177C } /* Literal.String.Symbol */
+.bp { color: #008000 } /* Name.Builtin.Pseudo */
+.vc { color: #19177C } /* Name.Variable.Class */
+.vg { color: #19177C } /* Name.Variable.Global */
+.vi { color: #19177C } /* Name.Variable.Instance */
+.il { color: #666666 } /* Literal.Number.Integer.Long */
+
+    </style>
+    
+    
+    <!-- /Styles -->
+    <!-- Javascripts -->
+    
+    <script>
+      function main() {
+  // Since we don't have the fallback of attachEvent and
+  // other IE only stuff we won't try to run JS for IE.
+  // It will run though when using Google Chrome Frame
+  if (document.all) { return; }
+
+  var currentSlideNo;
+  var notesOn = false;
+  var slides = document.getElementsByClassName('slide');
+  var touchStartX = 0;
+  var spaces = /\s+/, a1 = [""];
+  var tocOpened = false;
+  var helpOpened = false;
+  var overviewActive = false;
+  var showingPresenterView = false;
+  var presenterViewWin = null;
+  var isPresenterView = false;
+
+  var str2array = function(s) {
+    if (typeof s == "string" || s instanceof String) {
+      if (s.indexOf(" ") < 0) {
+        a1[0] = s;
+        return a1;
+      } else {
+        return s.split(spaces);
+      }
+    }
+    return s;
+  };
+
+  var trim = function(str) {
+    return str.replace(/^\s\s*/, '').replace(/\s\s*$/, '');
+  };
+
+  var addClass = function(node, classStr) {
+    classStr = str2array(classStr);
+    var cls = " " + node.className + " ";
+    for (var i = 0, len = classStr.length, c; i < len; ++i) {
+      c = classStr[i];
+      if (c && cls.indexOf(" " + c + " ") < 0) {
+        cls += c + " ";
+      }
+    }
+    node.className = trim(cls);
+  };
+
+  var removeClass = function(node, classStr) {
+    var cls;
+    if (classStr !== undefined) {
+      classStr = str2array(classStr);
+      cls = " " + node.className + " ";
+      for (var i = 0, len = classStr.length; i < len; ++i) {
+        cls = cls.replace(" " + classStr[i] + " ", " ");
+      }
+      cls = trim(cls);
+    } else {
+      cls = "";
+    }
+    if (node.className != cls) {
+      node.className = cls;
+    }
+  };
+
+  var getSlideEl = function(slideNo) {
+    if (slideNo > 0) {
+      return slides[slideNo - 1];
+    } else {
+      return null;
+    }
+  };
+
+  var getSlideTitle = function(slideNo) {
+    var el = getSlideEl(slideNo);
+    if (el) {
+      var headers = el.getElementsByTagName('header');
+      if (headers.length > 0) {
+        return el.getElementsByTagName('header')[0].innerText;
+      }
+    }
+    return null;
+  };
+
+  var getSlidePresenterNote = function(slideNo) {
+    var el = getSlideEl(slideNo);
+    if (el) {
+      var n = el.getElementsByClassName('presenter_notes');
+      if (n.length > 0) {
+        return n[0];
+      }
+    }
+    return null;
+  };
+
+  var changeSlideElClass = function(slideNo, className) {
+    var el = getSlideEl(slideNo);
+    if (el) {
+      removeClass(el, 'far-past past current future far-future');
+      addClass(el, className);
+    }
+  };
+
+  var updateSlideClasses = function(updateOther) {
+    window.location.hash = (isPresenterView ? "presenter" : "slide") + currentSlideNo;
+
+    for (var i=1; i<currentSlideNo-1; i++) {
+      changeSlideElClass(i, 'far-past');
+    }
+
+    changeSlideElClass(currentSlideNo - 1, 'past');
+    changeSlideElClass(currentSlideNo, 'current');
+    changeSlideElClass(currentSlideNo + 1, 'future');
+
+    for (i=currentSlideNo+2; i<slides.length+1; i++) {
+      changeSlideElClass(i, 'far-future');
+    }
+
+    highlightCurrentTocLink();
+
+    document.getElementsByTagName('title')[0].innerText = getSlideTitle(currentSlideNo);
+
+    updatePresenterNotes();
+
+    if (updateOther) { updateOtherPage(); }
+  };
+
+  var updatePresenterNotes = function() {
+    if (!isPresenterView) { return; }
+
+    var existingNote = document.getElementById('current_presenter_notes');
+    var currentNote = getSlidePresenterNote(currentSlideNo).cloneNode(true);
+    currentNote.setAttribute('id', 'presenter_note');
+
+    existingNote.replaceChild(currentNote, document.getElementById('presenter_note'));
+  };
+
+  var highlightCurrentTocLink = function() {
+    var toc = document.getElementById('toc');
+
+    if (toc) {
+      var tocRows = toc.getElementsByTagName('tr');
+      for (var i=0; i<tocRows.length; i++) {
+        removeClass(tocRows.item(i), 'active');
+      }
+
+      var currentTocRow = document.getElementById('toc-row-' + currentSlideNo);
+      if (currentTocRow) {
+        addClass(currentTocRow, 'active');
+      }
+    }
+  };
+
+  var updateOtherPage = function() {
+    if (!showingPresenterView) { return; }
+
+    var w = isPresenterView ? window.opener : presenterViewWin;
+    w.postMessage('slide#' + currentSlideNo, '*');
+  }
+
+  var nextSlide = function() {
+    if (currentSlideNo < slides.length) {
+      currentSlideNo++;
+    }
+    updateSlideClasses(true);
+  };
+
+  var prevSlide = function() {
+    if (currentSlideNo > 1) {
+      currentSlideNo--;
+    }
+    updateSlideClasses(true);
+  };
+
+  var showNotes = function() {
+    var notes = getSlideEl(currentSlideNo).getElementsByClassName('notes');
+    for (var i = 0, len = notes.length; i < len; i++) {
+      notes.item(i).style.display = (notesOn) ? 'none':'block';
+    }
+    notesOn = (notesOn) ? false : true;
+  };
+
+  var showSlideNumbers = function() {
+    var asides = document.getElementsByClassName('page_number');
+    var hidden = asides[0].style.display != 'block';
+    for (var i = 0; i < asides.length; i++) {
+      asides.item(i).style.display = hidden ? 'block' : 'none';
+    }
+  };
+
+  var showSlideSources = function() {
+    var asides = document.getElementsByClassName('source');
+    var hidden = asides[0].style.display != 'block';
+    for (var i = 0; i < asides.length; i++) {
+      asides.item(i).style.display = hidden ? 'block' : 'none';
+    }
+  };
+
+  var showToc = function() {
+    if (helpOpened) {
+        showHelp();
+    }
+
+    var toc = document.getElementById('toc');
+
+    if (toc) {
+      toc.style.marginLeft = tocOpened ? '-' + toc.clientWidth + 'px' : '0px';
+      tocOpened = !tocOpened;
+    }
+
+    updateOverview();
+  };
+
+  var showHelp = function() {
+    if (tocOpened) {
+        showToc();
+    }
+
+    var help = document.getElementById('help');
+
+    if (help) {
+      help.style.marginLeft = helpOpened ? '-' + help.clientWidth + 'px' : '0px';
+      helpOpened = !helpOpened;
+    }
+  };
+
+  var showPresenterView = function() {
+    if (isPresenterView) { return; }
+
+    if (showingPresenterView) {
+      presenterViewWin.close();
+      presenterViewWin = null;
+      showingPresenterView = false;
+    } else {
+      presenterViewWin = open(window.location.pathname + "#presenter" + currentSlideNo, 'presenter_notes',
+                                  'directories=no,location=no,toolbar=no,menubar=no,copyhistory=no');
+      showingPresenterView = true;
+    }
+  }
+
+  var switch3D = function() {
+    if (document.body.className.indexOf('three-d') == -1) {
+      document.getElementsByClassName('presentation')[0].style.webkitPerspective = '1000px';
+      document.body.className += ' three-d';
+    } else {
+      window.setTimeout("document.getElementsByClassName('presentation')[0].style.webkitPerspective = '0';", 2000);
+      document.body.className = document.body.className.replace(/three-d/, '');
+    }
+  };
+
+  var toggleOverview = function() {
+    var action = overviewActive ? removeClass : addClass;
+    action(document.body, 'expose');
+    overviewActive = !overviewActive;
+    updateOverview();
+  };
+
+  var updateOverview = function() {
+    try {
+      var presentation = document.getElementsByClassName('presentation')[0];
+    } catch (e) {
+      return;
+    }
+
+    if (isPresenterView) {
+      var action = overviewActive ? removeClass : addClass;
+      action(document.body, 'presenter_view');
+    }
+
+    var toc = document.getElementById('toc');
+
+    if (!toc) {
+      return;
+    }
+    
+    if (!tocOpened || !overviewActive) {
+      presentation.style.marginLeft = '0px';
+      presentation.style.width = '100%';
+    } else {
+      presentation.style.marginLeft = toc.clientWidth + 'px';
+      presentation.style.width = (presentation.clientWidth - toc.clientWidth) + 'px';
+    }
+  };
+
+  var handleBodyKeyDown = function(event) {
+    switch (event.keyCode) {
+      case 13: // Enter
+        if (overviewActive) {
+          toggleOverview();
+        }
+        break;
+      case 27: // ESC
+        toggleOverview();
+        break;
+      case 37: // left arrow
+        prevSlide();
+        break;
+      case 39: // right arrow
+      case 32: // space
+        nextSlide();
+        break;
+      case 50: // 2
+        showNotes();
+        break;
+      case 51: // 3
+        switch3D();
+        break;
+      case 72: // h
+        showHelp();
+        break;
+      case 78: // n
+        showSlideNumbers();
+        break;
+      case 80: // p
+        showPresenterView();
+        break;
+      case 83: // s
+        showSlideSources();
+        break;
+      case 84: // t
+        showToc();
+        break;
+    }
+  };
+
+  var handleWheel = function(event) {
+    if (tocOpened || helpOpened) {
+      return;
+    }
+
+    var delta = 0;
+
+    if (!event) {
+      event = window.event;
+    }
+
+    if (event.wheelDelta) {
+      delta = event.wheelDelta/120;
+      if (window.opera) delta = -delta;
+    } else if (event.detail) {
+      delta = -event.detail/3;
+    }
+
+    if (delta && delta <0) {
+      nextSlide();
+    } else if (delta) {
+      prevSlide();
+    }
+  };
+
+  var addSlideClickListeners = function() {
+    for (var i=0; i < slides.length; i++) {
+      var slide = slides.item(i);
+      slide.num = i + 1;
+      slide.addEventListener('click', function(e) {
+        if (overviewActive) {
+          currentSlideNo = this.num;
+          toggleOverview();
+          updateSlideClasses(true);
+        }
+        return false;
+      }, true);
+    }
+  };
+
+  var addRemoteWindowControls = function() {
+    window.addEventListener("message", function(e) {
+      if (e.data.indexOf("slide#") != -1) {
+          currentSlideNo = Number(e.data.replace('slide#', ''));
+          updateSlideClasses(false);
+      }
+    }, false);
+  }
+
+  var addTouchListeners = function() {
+    document.addEventListener('touchstart', function(e) {
+      touchStartX = e.touches[0].pageX;
+    }, false);
+    document.addEventListener('touchend', function(e) {
+      var pixelsMoved = touchStartX - e.changedTouches[0].pageX;
+      var SWIPE_SIZE = 150;
+      if (pixelsMoved > SWIPE_SIZE) {
+        nextSlide();
+      }
+      else if (pixelsMoved < -SWIPE_SIZE) {
+       prevSlide();
+      }
+    }, false);
+  };
+
+  var addTocLinksListeners = function() {
+    var toc = document.getElementById('toc');
+
+    if (toc) {
+      var tocLinks = toc.getElementsByTagName('a');
+      for (var i=0; i < tocLinks.length; i++) {
+        tocLinks.item(i).addEventListener('click', function(e) {
+          currentSlideNo = Number(this.attributes['href'].value.replace('#slide', ''));
+          updateSlideClasses(true);
+          return false;
+        }, true);
+      }
+    }
+  };
+
+  // initialize
+
+  (function() {
+    if (window.location.hash == "") {
+      currentSlideNo = 1;
+    } else if (window.location.hash.indexOf("#presenter") != -1) {
+      currentSlideNo = Number(window.location.hash.replace('#presenter', ''));
+      isPresenterView = true;
+      showingPresenterView = true;
+      presenterViewWin = window;
+      addClass(document.body, 'presenter_view');
+    } else {
+      currentSlideNo = Number(window.location.hash.replace('#slide', ''));
+    }
+
+    document.addEventListener('keydown', handleBodyKeyDown, false);
+    document.addEventListener('DOMMouseScroll', handleWheel, false);
+    window.onmousewheel = document.onmousewheel = handleWheel;
+
+    var els = slides;
+    for (var i = 0, el; el = els[i]; i++) {
+      addClass(el, 'slide far-future');
+    }
+    updateSlideClasses(false);
+
+    // add support for finger events (filter it by property detection?)
+    addTouchListeners();
+
+    addTocLinksListeners();
+
+    addSlideClickListeners();
+
+    addRemoteWindowControls();
+  })();
+};
+
+    </script>
+    
+    
+    <!-- /Javascripts -->
+</head>
+<body>
+  <div class="presentation">
+    <div id="current_presenter_notes">
+      <div id="presenter_note"></div>
+    </div>
+    <div class="slides">
+      
+      <!-- slide source: slides.md -->
+      <div class="slide-wrapper">
+        <div class="slide">
+          <div class="inner">
+            
+            <header><h1>Declarative Configuration Management with&nbsp;Puppet</h1></header>
+            
+            
+          </div>
+          <div class="presenter_notes">
+            <header></header>
+            <section>
+            
+            </section>
+          </div>
+          <footer>
+            
+            <aside class="source">
+              Source: <a href="slides.md">slides.md</a>
+            </aside>
+            
+            <aside class="page_number">
+              1/28
+            </aside>
+          </footer>
+        </div>
+      </div>
+      
+      <!-- slide source: slides.md -->
+      <div class="slide-wrapper">
+        <div class="slide">
+          <div class="inner">
+            
+            
+            <section><blockquote>
+<p>Configuration Management is a set of tool that let you describe your stack's
+setup in such a way that this configuration management tool can recreate that
+stack from <em>any known starting point</em>.</p>
+<p>Where an automation tool like Fabric or Capistrano is <em>imperative</em>
+(do this, do that, then do this), configuration management tools tends
+to be <em>declarative</em>.</p>
+<p>You say: &ldquo;I have a server and it runs MySQL as this user&rdquo; and the
+configuration management tool figures out how to make that true.</p>
+</blockquote>
+<p>&mdash; Jacob Kaplan-Moss,
+<a href="http://blog.mahalo.com/dev-blog/2011/2/15/jacob-kaplan-moss-at-mahalo.html">How I Learned To Stop Worrying and Love Deployment</a></p></section>
+            
+          </div>
+          <div class="presenter_notes">
+            <header></header>
+            <section>
+            
+            </section>
+          </div>
+          <footer>
+            
+            <aside class="source">
+              Source: <a href="slides.md">slides.md</a>
+            </aside>
+            
+            <aside class="page_number">
+              2/28
+            </aside>
+          </footer>
+        </div>
+      </div>
+      
+      <!-- slide source: slides.md -->
+      <div class="slide-wrapper">
+        <div class="slide">
+          <div class="inner">
+            
+            <header><h1>Users</h1></header>
+            
+            
+            <section><ul>
+<li>Twitter</li>
+<li>Digg</li>
+<li>Google</li>
+<li>Rackspace</li>
+<li>Red Hat</li>
+<li>Match.com</li>
+<li>Stanford University</li>
+<li>New York University</li>
+</ul></section>
+            
+          </div>
+          <div class="presenter_notes">
+            <header></header>
+            <section>
+            
+            </section>
+          </div>
+          <footer>
+            
+            <aside class="source">
+              Source: <a href="slides.md">slides.md</a>
+            </aside>
+            
+            <aside class="page_number">
+              3/28
+            </aside>
+          </footer>
+        </div>
+      </div>
+      
+      <!-- slide source: slides.md -->
+      <div class="slide-wrapper">
+        <div class="slide">
+          <div class="inner">
+            
+            <header><h1>Alternatives</h1></header>
+            
+            
+            <section><ul>
+<li>Cfengine</li>
+<li>Chef</li>
+</ul>
+<p>Reasons to use Puppet in stead of Chef:</p>
+<ul>
+<li>Bootstrap is easy: <code>yum install puppet</code></li>
+<li>Restricted language makes you think through what you need to do
+  and makes it hard to create quick hacks.</li>
+<li>A client&mdash;server installation is more lightweight (Chef needs
+  RabbitMQ, CouchDB, Solr)</li>
+</ul></section>
+            
+          </div>
+          <div class="presenter_notes">
+            <header></header>
+            <section>
+            
+            </section>
+          </div>
+          <footer>
+            
+            <aside class="source">
+              Source: <a href="slides.md">slides.md</a>
+            </aside>
+            
+            <aside class="page_number">
+              4/28
+            </aside>
+          </footer>
+        </div>
+      </div>
+      
+      <!-- slide source: slides.md -->
+      <div class="slide-wrapper">
+        <div class="slide">
+          <div class="inner">
+            
+            <header><h1>Typical setup (client-server)</h1></header>
+            
+            
+            <section><p><img alt="Typical" src="data:image/png;base64,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" /></p></section>
+            
+          </div>
+          <div class="presenter_notes">
+            <header></header>
+            <section>
+            
+            </section>
+          </div>
+          <footer>
+            
+            <aside class="source">
+              Source: <a href="slides.md">slides.md</a>
+            </aside>
+            
+            <aside class="page_number">
+              5/28
+            </aside>
+          </footer>
+        </div>
+      </div>
+      
+      <!-- slide source: slides.md -->
+      <div class="slide-wrapper">
+        <div class="slide">
+          <div class="inner">
+            
+            <header><h1>Typical setup (client-server)</h1></header>
+            
+            
+            <section><ul>
+<li>One Puppet master</li>
+<li>Many Puppet agents which pulls the Puppet master for changes over a REST API</li>
+<li>SSL certificate based authentication &mdash; agents needs to get signed
+  on the master</li>
+</ul>
+<p>The agents does not have access to the source configuration:</p>
+<ol>
+<li>The agent gathers local facts about its system</li>
+<li>The agent requests a configuration catalog from the master</li>
+<li>The master compiles the source configuration to a catalog and returns it to the agent</li>
+<li>The agent applies the catalog which results in configuration changes</li>
+</ol></section>
+            
+          </div>
+          <div class="presenter_notes">
+            <header></header>
+            <section>
+            
+            </section>
+          </div>
+          <footer>
+            
+            <aside class="source">
+              Source: <a href="slides.md">slides.md</a>
+            </aside>
+            
+            <aside class="page_number">
+              6/28
+            </aside>
+          </footer>
+        </div>
+      </div>
+      
+      <!-- slide source: slides.md -->
+      <div class="slide-wrapper">
+        <div class="slide has_code">
+          <div class="inner">
+            
+            <header><h1>Example code</h1></header>
+            
+            
+            <section><p>https://github.com/oc/roots-puppet</p>
+<h1>Preparation</h1>
+<p>Bare</p>
+<div class="highlight"><pre><span class="lineno">1</span> yum install puppet
+</pre></div>
+
+<p>Master</p>
+<div class="highlight"><pre><span class="lineno">1</span> <span class="nb">export </span><span class="nv">HOSTNAME</span><span class="o">=</span>mgmt.muda.no
+<span class="lineno">2</span> bash &lt; &lt;<span class="o">(</span>curl -s https://github.com/oc/roots-puppet/raw/master/init-master.sh<span class="o">)</span>
+</pre></div>
+
+<p>Agent</p>
+<div class="highlight"><pre><span class="lineno">1</span> <span class="nb">export </span><span class="nv">HOSTNAME</span><span class="o">=</span>node1.muda.no
+<span class="lineno">2</span> bash &lt; &lt;<span class="o">(</span>curl -s https://github.com/oc/roots-puppet/raw/master/init-agent.sh<span class="o">)</span>
+</pre></div>
+</section>
+            
+          </div>
+          <div class="presenter_notes">
+            <header></header>
+            <section>
+            
+            </section>
+          </div>
+          <footer>
+            
+            <aside class="source">
+              Source: <a href="slides.md">slides.md</a>
+            </aside>
+            
+            <aside class="page_number">
+              7/28
+            </aside>
+          </footer>
+        </div>
+      </div>
+      
+      <!-- slide source: slides.md -->
+      <div class="slide-wrapper">
+        <div class="slide has_code">
+          <div class="inner">
+            
+            <header><h1>Accept certificates / Sign nodes</h1></header>
+            
+            
+            <section><p>Start the node (once/test configuration):</p>
+<div class="highlight"><pre><span class="lineno">1</span> /etc/init.d/puppet once -v
+</pre></div>
+
+<p>To show a list of puppet agent configurations:</p>
+<div class="highlight"><pre><span class="lineno">1</span> /etc/init.d/puppet genconfig
+</pre></div>
+
+<p>On the puppet master:</p>
+<div class="highlight"><pre><span class="lineno">1</span> May 2 15:51:18 li304-113 puppet-master<span class="o">[</span>3636<span class="o">]</span>: node1.muda.no has a waiting certificate request
+<span class="lineno">2</span> 
+<span class="lineno">3</span> !sh
+<span class="lineno">4</span> puppet cert --sign node1.muda.no
+</pre></div>
+</section>
+            
+          </div>
+          <div class="presenter_notes">
+            <header></header>
+            <section>
+            
+            </section>
+          </div>
+          <footer>
+            
+            <aside class="source">
+              Source: <a href="slides.md">slides.md</a>
+            </aside>
+            
+            <aside class="page_number">
+              8/28
+            </aside>
+          </footer>
+        </div>
+      </div>
+      
+      <!-- slide source: slides.md -->
+      <div class="slide-wrapper">
+        <div class="slide">
+          <div class="inner">
+            
+            <header><h1>Changes in 2.6.x</h1></header>
+            
+            
+            <section><p>Single binary.</p>
+<ul>
+<li>puppetmasterd → puppet master</li>
+<li>puppetd → puppet agent</li>
+<li>puppet → puppet apply</li>
+<li>puppetca → puppet cert</li>
+<li>ralsh → puppet resource</li>
+<li>puppetrun → puppet kick</li>
+<li>puppetqd → puppet queue</li>
+<li>filebucket → puppet filebucket</li>
+<li>puppetdoc → puppet doc</li>
+<li>pi → puppet describe</li>
+</ul></section>
+            
+          </div>
+          <div class="presenter_notes">
+            <header></header>
+            <section>
+            
+            </section>
+          </div>
+          <footer>
+            
+            <aside class="source">
+              Source: <a href="slides.md">slides.md</a>
+            </aside>
+            
+            <aside class="page_number">
+              9/28
+            </aside>
+          </footer>
+        </div>
+      </div>
+      
+      <!-- slide source: slides.md -->
+      <div class="slide-wrapper">
+        <div class="slide has_code">
+          <div class="inner">
+            
+            <header><h1>Resources</h1></header>
+            
+            
+            <section><p>Have <em>type</em>, <em>name</em>, and <em>parameters</em>:</p>
+<div class="highlight"><pre><span class="lineno">1</span> <span class="n">package</span> <span class="p">{</span> <span class="s2">&quot;httpd&quot;</span><span class="p">:</span>
+<span class="lineno">2</span>   <span class="n">ensure</span> <span class="o">=&gt;</span> <span class="n">present</span><span class="p">,</span>
+<span class="lineno">3</span> <span class="p">}</span>
+</pre></div>
+</section>
+            
+          </div>
+          <div class="presenter_notes">
+            <header></header>
+            <section>
+            
+            </section>
+          </div>
+          <footer>
+            
+            <aside class="source">
+              Source: <a href="slides.md">slides.md</a>
+            </aside>
+            
+            <aside class="page_number">
+              10/28
+            </aside>
+          </footer>
+        </div>
+      </div>
+      
+      <!-- slide source: slides.md -->
+      <div class="slide-wrapper">
+        <div class="slide has_code">
+          <div class="inner">
+            
+            <header><h1>Running puppet code</h1></header>
+            
+            
+            <section><div class="highlight"><pre><span class="lineno">1</span> puppet apply myfile.pp
+</pre></div>
+</section>
+            
+          </div>
+          <div class="presenter_notes">
+            <header></header>
+            <section>
+            
+            </section>
+          </div>
+          <footer>
+            
+            <aside class="source">
+              Source: <a href="slides.md">slides.md</a>
+            </aside>
+            
+            <aside class="page_number">
+              11/28
+            </aside>
+          </footer>
+        </div>
+      </div>
+      
+      <!-- slide source: slides.md -->
+      <div class="slide-wrapper">
+        <div class="slide has_code">
+          <div class="inner">
+            
+            <header><h1>Debugging puppet code</h1></header>
+            
+            
+            <section><p>Master</p>
+<div class="highlight"><pre><span class="lineno">1</span> puppet master --no-deamonize
+</pre></div>
+
+<p>Agents (files)</p>
+<div class="highlight"><pre><span class="lineno">1</span> puppet --debug --verbose file.pp
+<span class="lineno">2</span> puppet --parseonly file.pp
+</pre></div>
+
+<p>Configurations</p>
+<div class="highlight"><pre><span class="lineno">1</span> <span class="c1"># Notice the master log</span>
+<span class="lineno">2</span> <span class="n">notice</span><span class="p">(</span><span class="s2">&quot;The value is: ${yourvar}&quot;</span><span class="p">)</span>
+<span class="lineno">3</span> 
+<span class="lineno">4</span> <span class="c1"># Notify the clients</span>
+<span class="lineno">5</span> <span class="n">notify</span><span class="p">{</span><span class="s2">&quot;The value is: ${yourvar}&quot;</span><span class="p">:</span> <span class="p">}</span>
+</pre></div>
+</section>
+            
+          </div>
+          <div class="presenter_notes">
+            <header></header>
+            <section>
+            
+            </section>
+          </div>
+          <footer>
+            
+            <aside class="source">
+              Source: <a href="slides.md">slides.md</a>
+            </aside>
+            
+            <aside class="page_number">
+              12/28
+            </aside>
+          </footer>
+        </div>
+      </div>
+      
+      <!-- slide source: slides.md -->
+      <div class="slide-wrapper">
+        <div class="slide has_code">
+          <div class="inner">
+            
+            <header><h1>Different resource types</h1></header>
+            
+            
+            <section><div class="highlight"><pre><span class="lineno"> 1</span> <span class="n">group</span> <span class="p">{</span> <span class="s2">&quot;staff&quot;</span><span class="p">:</span>
+<span class="lineno"> 2</span>     <span class="n">ensure</span> <span class="o">=&gt;</span> <span class="n">present</span><span class="p">,</span>
+<span class="lineno"> 3</span>     <span class="n">gid</span>    <span class="o">=&gt;</span> <span class="mi">10</span><span class="p">,</span>
+<span class="lineno"> 4</span> <span class="p">}</span>
+<span class="lineno"> 5</span> 
+<span class="lineno"> 6</span> <span class="n">user</span> <span class="p">{</span> <span class="s2">&quot;oc&quot;</span><span class="p">:</span>
+<span class="lineno"> 7</span>     <span class="n">ensure</span> <span class="o">=&gt;</span> <span class="n">present</span><span class="p">,</span>
+<span class="lineno"> 8</span>     <span class="n">gid</span> <span class="o">=&gt;</span> <span class="mi">10</span><span class="p">,</span>
+<span class="lineno"> 9</span>     <span class="n">uid</span> <span class="o">=&gt;</span> <span class="mi">1337</span><span class="p">,</span>
+<span class="lineno">10</span>     <span class="n">home</span> <span class="o">=&gt;</span> <span class="s2">&quot;/home/oc&quot;</span><span class="p">,</span>
+<span class="lineno">11</span>     <span class="n">managehome</span> <span class="o">=&gt;</span> <span class="kc">true</span><span class="p">,</span>
+<span class="lineno">12</span> <span class="p">}</span>
+<span class="lineno">13</span> 
+<span class="lineno">14</span> <span class="n">cron</span> <span class="p">{</span> <span class="s2">&quot;poor-mans-http-ping&quot;</span><span class="p">:</span>
+<span class="lineno">15</span>   <span class="n">command</span> <span class="o">=&gt;</span> <span class="s2">&quot;curl -s http://rootsconf.no/ &gt; /dev/null 2&gt;&amp;1&quot;</span><span class="p">,</span>
+<span class="lineno">16</span>   <span class="n">user</span> <span class="o">=&gt;</span> <span class="s2">&quot;oc&quot;</span><span class="p">,</span>
+<span class="lineno">17</span>   <span class="n">minute</span> <span class="o">=&gt;</span> <span class="s2">&quot;*/1&quot;</span><span class="p">,</span> <span class="c1"># Every minute</span>
+<span class="lineno">18</span> <span class="p">}</span>
+</pre></div>
+</section>
+            
+          </div>
+          <div class="presenter_notes">
+            <header></header>
+            <section>
+            
+            </section>
+          </div>
+          <footer>
+            
+            <aside class="source">
+              Source: <a href="slides.md">slides.md</a>
+            </aside>
+            
+            <aside class="page_number">
+              13/28
+            </aside>
+          </footer>
+        </div>
+      </div>
+      
+      <!-- slide source: slides.md -->
+      <div class="slide-wrapper">
+        <div class="slide has_code">
+          <div class="inner">
+            
+            <header><h1>Generic resource types</h1></header>
+            
+            
+            <section><p>Building blocks for describing resources not directly supported.</p>
+<div class="highlight"><pre><span class="lineno">1</span> <span class="n">file</span> <span class="p">{</span> <span class="s2">&quot;/etc/localtime&quot;</span><span class="p">:</span>
+<span class="lineno">2</span>   <span class="n">ensure</span> <span class="o">=&gt;</span> <span class="n">link</span><span class="p">,</span>
+<span class="lineno">3</span>   <span class="n">target</span> <span class="o">=&gt;</span> <span class="s2">&quot;/usr/share/zoneinfo/Europe/Oslo&quot;</span><span class="p">,</span>
+<span class="lineno">4</span> <span class="p">}</span>
+</pre></div>
+</section>
+            
+          </div>
+          <div class="presenter_notes">
+            <header></header>
+            <section>
+            
+            </section>
+          </div>
+          <footer>
+            
+            <aside class="source">
+              Source: <a href="slides.md">slides.md</a>
+            </aside>
+            
+            <aside class="page_number">
+              14/28
+            </aside>
+          </footer>
+        </div>
+      </div>
+      
+      <!-- slide source: slides.md -->
+      <div class="slide-wrapper">
+        <div class="slide has_code">
+          <div class="inner">
+            
+            <header><h1>Dependencies between resources</h1></header>
+            
+            
+            <section><p><code>require</code> / <code>before</code> and <code>notify</code> / <code>subsribe</code>.</p>
+<div class="highlight"><pre><span class="lineno"> 1</span> <span class="nv">$nexus_bundle</span> <span class="o">=</span> <span class="s2">&quot;/tmp/nexus-oss-webapp-1.9.1.1-bundle.tar.gz&quot;</span>
+<span class="lineno"> 2</span> 
+<span class="lineno"> 3</span> <span class="n">file</span> <span class="p">{</span> <span class="s2">&quot;/opt/nexus-oss-webapp-1.9.1.1&quot;</span><span class="p">:</span>
+<span class="lineno"> 4</span>   <span class="n">require</span> <span class="o">=&gt;</span> <span class="n">Exec</span><span class="p">[</span><span class="s2">&quot;Extract nexus&quot;</span><span class="p">],</span>
+<span class="lineno"> 5</span> <span class="p">}</span>
+<span class="lineno"> 6</span> 
+<span class="lineno"> 7</span> <span class="n">exec</span> <span class="p">{</span> <span class="s2">&quot;Extract nexus&quot;</span><span class="p">:</span>
+<span class="lineno"> 8</span>   <span class="n">cwd</span>     <span class="o">=&gt;</span> <span class="s2">&quot;/opt&quot;</span><span class="p">,</span>
+<span class="lineno"> 9</span>   <span class="n">command</span> <span class="o">=&gt;</span> <span class="s2">&quot;tar xvf $nexus_bundle&quot;</span><span class="p">,</span>
+<span class="lineno">10</span>   <span class="n">creates</span> <span class="o">=&gt;</span> <span class="s1">&#39;/opt/nexus-oss-webapp-1.9.1.1&#39;</span><span class="p">,</span>
+<span class="lineno">11</span>   <span class="n">path</span>    <span class="o">=&gt;</span> <span class="s2">&quot;/usr/bin:/bin&quot;</span><span class="p">,</span>
+<span class="lineno">12</span>   <span class="n">require</span> <span class="o">=&gt;</span> <span class="n">Exec</span><span class="p">[</span><span class="s2">&quot;Fetch nexus&quot;</span><span class="p">],</span>
+<span class="lineno">13</span> <span class="p">}</span>
+<span class="lineno">14</span> 
+<span class="lineno">15</span> <span class="n">exec</span> <span class="p">{</span> <span class="s2">&quot;Fetch nexus&quot;</span><span class="p">:</span>
+<span class="lineno">16</span>   <span class="n">cwd</span>     <span class="o">=&gt;</span> <span class="s2">&quot;/tmp&quot;</span><span class="p">,</span>
+<span class="lineno">17</span>   <span class="n">command</span> <span class="o">=&gt;</span> <span class="s2">&quot;curl -O $nexus_url&quot;</span><span class="p">,</span>
+<span class="lineno">18</span>   <span class="n">creates</span> <span class="o">=&gt;</span> <span class="nv">$nexus_bundle</span><span class="p">,</span>
+<span class="lineno">19</span>   <span class="n">path</span>    <span class="o">=&gt;</span> <span class="s2">&quot;/usr/bin:/bin&quot;</span><span class="p">,</span>
+<span class="lineno">20</span>   <span class="n">require</span> <span class="o">=&gt;</span> <span class="n">Package</span><span class="p">[</span><span class="s2">&quot;curl&quot;</span><span class="p">],</span>
+<span class="lineno">21</span> <span class="p">}</span>
+</pre></div>
+</section>
+            
+          </div>
+          <div class="presenter_notes">
+            <header></header>
+            <section>
+            
+            </section>
+          </div>
+          <footer>
+            
+            <aside class="source">
+              Source: <a href="slides.md">slides.md</a>
+            </aside>
+            
+            <aside class="page_number">
+              15/28
+            </aside>
+          </footer>
+        </div>
+      </div>
+      
+      <!-- slide source: slides.md -->
+      <div class="slide-wrapper">
+        <div class="slide has_code">
+          <div class="inner">
+            
+            <header><h1>Templates and variables</h1></header>
+            
+            
+            <section><div class="highlight"><pre><span class="lineno"> 1</span> <span class="nv">$port</span> <span class="o">=</span> <span class="mi">20202</span>
+<span class="lineno"> 2</span> <span class="nv">$allowed_users</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;oc&quot;</span><span class="p">,</span> <span class="s2">&quot;stein&quot;</span><span class="p">,</span> <span class="s2">&quot;root&quot;</span><span class="p">]</span> <span class="c1"># shouldn&#39;t really allow root</span>
+<span class="lineno"> 3</span> 
+<span class="lineno"> 4</span> <span class="n">package</span> <span class="p">{</span> <span class="s2">&quot;sshd&quot;</span><span class="p">:</span>
+<span class="lineno"> 5</span>   <span class="n">ensure</span> <span class="o">=&gt;</span> <span class="n">present</span><span class="p">,</span>
+<span class="lineno"> 6</span> <span class="p">}</span>
+<span class="lineno"> 7</span> 
+<span class="lineno"> 8</span> <span class="n">file</span> <span class="p">{</span> <span class="s2">&quot;/etc/ssh/sshd_config&quot;</span><span class="p">:</span>
+<span class="lineno"> 9</span>   <span class="n">content</span> <span class="o">=&gt;</span> <span class="n">template</span><span class="p">(</span><span class="s2">&quot;sshd_config.erb&quot;</span><span class="p">),</span>
+<span class="lineno">10</span>   <span class="n">require</span> <span class="o">=&gt;</span> <span class="n">Package</span><span class="p">[</span><span class="s2">&quot;sshd&quot;</span><span class="p">],</span>
+<span class="lineno">11</span> <span class="p">}</span>
+<span class="lineno">12</span> 
+<span class="lineno">13</span> <span class="n">service</span> <span class="p">{</span> <span class="n">ssh</span><span class="p">:</span>
+<span class="lineno">14</span>   <span class="n">ensure</span> <span class="o">=&gt;</span> <span class="n">running</span><span class="p">,</span>
+<span class="lineno">15</span>   <span class="n">enable</span> <span class="o">=&gt;</span> <span class="kc">true</span><span class="p">,</span>
+<span class="lineno">16</span>   <span class="n">hasstatus</span> <span class="o">=&gt;</span> <span class="kc">true</span><span class="p">,</span>
+<span class="lineno">17</span>   <span class="n">subscribe</span> <span class="o">=&gt;</span> <span class="p">[</span> <span class="n">Package</span><span class="p">[</span><span class="s2">&quot;sshd&quot;</span><span class="p">],</span> <span class="n">File</span><span class="p">[</span><span class="s2">&quot;/etc/ssh/sshd_config&quot;</span><span class="p">]</span> <span class="p">],</span>
+<span class="lineno">18</span> <span class="p">}</span>
+</pre></div>
+</section>
+            
+          </div>
+          <div class="presenter_notes">
+            <header></header>
+            <section>
+            
+            </section>
+          </div>
+          <footer>
+            
+            <aside class="source">
+              Source: <a href="slides.md">slides.md</a>
+            </aside>
+            
+            <aside class="page_number">
+              16/28
+            </aside>
+          </footer>
+        </div>
+      </div>
+      
+      <!-- slide source: slides.md -->
+      <div class="slide-wrapper">
+        <div class="slide has_code">
+          <div class="inner">
+            
+            
+            <section><p><code>sshd_config.erb</code>:</p>
+<div class="highlight"><pre><span class="lineno"> 1</span> <span class="x">Port </span><span class="cp">&lt;%=</span> <span class="n">port</span> <span class="cp">%&gt;</span><span class="x"></span>
+<span class="lineno"> 2</span> 
+<span class="lineno"> 3</span> <span class="x">Protocol 2</span>
+<span class="lineno"> 4</span> <span class="x">HostKey /etc/ssh/ssh_host_rsa_key</span>
+<span class="lineno"> 5</span> <span class="x">HostKey /etc/ssh/ssh_host_dsa_key</span>
+<span class="lineno"> 6</span> <span class="x">UsePrivilegeSeparation yes</span>
+<span class="lineno"> 7</span> 
+<span class="lineno"> 8</span> <span class="x">KeyRegenerationInterval 3600</span>
+<span class="lineno"> 9</span> <span class="x">ServerKeyBits 768</span>
+<span class="lineno">10</span> 
+<span class="lineno">11</span> <span class="x">LoginGraceTime 120</span>
+<span class="lineno">12</span> <span class="x">PermitRootLogin yes # Should be set to &#39;no&#39;</span>
+<span class="lineno">13</span> <span class="x">StrictModes yes</span>
+<span class="lineno">14</span> 
+<span class="lineno">15</span> <span class="x">PubkeyAuthentication yes</span>
+<span class="lineno">16</span> <span class="x">PasswordAuthentication yes # Should be set to &#39;no&#39;</span>
+<span class="lineno">17</span> 
+<span class="lineno">18</span> <span class="x">UsePAM yes</span>
+<span class="lineno">19</span> 
+<span class="lineno">20</span> <span class="cp">&lt;%</span> <span class="k">if</span> <span class="n">allowed_users</span><span class="o">.</span><span class="n">any?</span> <span class="cp">%&gt;</span><span class="x"></span>
+<span class="lineno">21</span> <span class="x">AllowUsers </span><span class="cp">&lt;%=</span> <span class="n">allowed_users</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="p">)</span> <span class="cp">%&gt;</span><span class="x"></span>
+<span class="lineno">22</span> <span class="cp">&lt;%</span> <span class="k">end</span> <span class="cp">%&gt;</span><span class="x"></span>
+</pre></div>
+</section>
+            
+          </div>
+          <div class="presenter_notes">
+            <header></header>
+            <section>
+            
+            </section>
+          </div>
+          <footer>
+            
+            <aside class="source">
+              Source: <a href="slides.md">slides.md</a>
+            </aside>
+            
+            <aside class="page_number">
+              17/28
+            </aside>
+          </footer>
+        </div>
+      </div>
+      
+      <!-- slide source: slides.md -->
+      <div class="slide-wrapper">
+        <div class="slide has_code">
+          <div class="inner">
+            
+            <header><h1>Running puppet code with templates</h1></header>
+            
+            
+            <section><div class="highlight"><pre><span class="lineno">1</span> puppet apply --templatedir<span class="o">=</span>templates templates_and_variables.pp
+</pre></div>
+</section>
+            
+          </div>
+          <div class="presenter_notes">
+            <header></header>
+            <section>
+            
+            </section>
+          </div>
+          <footer>
+            
+            <aside class="source">
+              Source: <a href="slides.md">slides.md</a>
+            </aside>
+            
+            <aside class="page_number">
+              18/28
+            </aside>
+          </footer>
+        </div>
+      </div>
+      
+      <!-- slide source: slides.md -->
+      <div class="slide-wrapper">
+        <div class="slide">
+          <div class="inner">
+            
+            <header><h1>Modules</h1></header>
+            
+            
+            <section><p>Collection of resources, classes, files, definitions and templates.</p>
+<pre><code>modules/
+    nginx/
+      manifests/
+        init.pp
+      files/
+        nginx.conf
+      templates/
+        site.conf.erb
+</code></pre></section>
+            
+          </div>
+          <div class="presenter_notes">
+            <header></header>
+            <section>
+            
+            </section>
+          </div>
+          <footer>
+            
+            <aside class="source">
+              Source: <a href="slides.md">slides.md</a>
+            </aside>
+            
+            <aside class="page_number">
+              19/28
+            </aside>
+          </footer>
+        </div>
+      </div>
+      
+      <!-- slide source: slides.md -->
+      <div class="slide-wrapper">
+        <div class="slide has_code">
+          <div class="inner">
+            
+            <header><h1>Classes</h1></header>
+            
+            
+            <section><p>Collection of resources. Not like the OOP term.</p>
+<p><code>modules/nginx/manifests/init.pp</code>:</p>
+<div class="highlight"><pre><span class="lineno"> 1</span> <span class="k">class</span> <span class="n">nginx</span> <span class="p">{</span>
+<span class="lineno"> 2</span>   <span class="n">package</span> <span class="p">{</span> <span class="n">nginx</span><span class="p">:</span>
+<span class="lineno"> 3</span>     <span class="n">ensure</span> <span class="o">=&gt;</span> <span class="n">present</span><span class="p">,</span>
+<span class="lineno"> 4</span>   <span class="p">}</span>
+<span class="lineno"> 5</span> 
+<span class="lineno"> 6</span>   <span class="n">file</span> <span class="p">{</span> <span class="s2">&quot;/var/www&quot;</span><span class="p">:</span>
+<span class="lineno"> 7</span>     <span class="n">ensure</span> <span class="o">=&gt;</span> <span class="n">directory</span><span class="p">,</span>
+<span class="lineno"> 8</span>   <span class="p">}</span>
+<span class="lineno"> 9</span> 
+<span class="lineno">10</span>   <span class="n">file</span> <span class="p">{</span> <span class="s2">&quot;/etc/nginx/nginx.conf&quot;</span><span class="p">:</span>
+<span class="lineno">11</span>     <span class="n">source</span> <span class="o">=&gt;</span> <span class="s2">&quot;puppet:///modules/nginx/nginx.conf&quot;</span><span class="p">,</span>
+<span class="lineno">12</span>     <span class="n">require</span> <span class="o">=&gt;</span> <span class="n">Package</span><span class="p">[</span><span class="n">nginx</span><span class="p">],</span>
+<span class="lineno">13</span>   <span class="p">}</span>
+<span class="lineno">14</span> 
+<span class="lineno">15</span>   <span class="n">service</span> <span class="p">{</span> <span class="n">nginx</span><span class="p">:</span>
+<span class="lineno">16</span>     <span class="n">ensure</span> <span class="o">=&gt;</span> <span class="n">running</span><span class="p">,</span>
+<span class="lineno">17</span>     <span class="n">enable</span> <span class="o">=&gt;</span> <span class="kc">true</span><span class="p">,</span>
+<span class="lineno">18</span>     <span class="n">pattern</span> <span class="o">=&gt;</span> <span class="s2">&quot;nginx: master process&quot;</span><span class="p">,</span>
+<span class="lineno">19</span>     <span class="n">subscribe</span> <span class="o">=&gt;</span> <span class="n">File</span><span class="p">[</span><span class="s2">&quot;/etc/nginx/nginx.conf&quot;</span><span class="p">],</span>
+<span class="lineno">20</span>     <span class="n">require</span> <span class="o">=&gt;</span> <span class="n">File</span><span class="p">[</span><span class="s2">&quot;/etc/nginx/nginx.conf&quot;</span><span class="p">],</span>
+<span class="lineno">21</span>   <span class="p">}</span>
+<span class="lineno">22</span> <span class="p">}</span>
+</pre></div>
+</section>
+            
+          </div>
+          <div class="presenter_notes">
+            <header></header>
+            <section>
+            
+            </section>
+          </div>
+          <footer>
+            
+            <aside class="source">
+              Source: <a href="slides.md">slides.md</a>
+            </aside>
+            
+            <aside class="page_number">
+              20/28
+            </aside>
+          </footer>
+        </div>
+      </div>
+      
+      <!-- slide source: slides.md -->
+      <div class="slide-wrapper">
+        <div class="slide has_code">
+          <div class="inner">
+            
+            <header><h1>Applying modules</h1></header>
+            
+            
+            <section><div class="highlight"><pre><span class="lineno">1</span> puppet apply --modulepath<span class="o">=</span>modules -e <span class="s1">&#39;include nginx&#39;</span>
+</pre></div>
+</section>
+            
+          </div>
+          <div class="presenter_notes">
+            <header></header>
+            <section>
+            
+            </section>
+          </div>
+          <footer>
+            
+            <aside class="source">
+              Source: <a href="slides.md">slides.md</a>
+            </aside>
+            
+            <aside class="page_number">
+              21/28
+            </aside>
+          </footer>
+        </div>
+      </div>
+      
+      <!-- slide source: slides.md -->
+      <div class="slide-wrapper">
+        <div class="slide has_code">
+          <div class="inner">
+            
+            <header><h1>Definitions</h1></header>
+            
+            
+            <section><p>Create new resource types.</p>
+<div class="highlight"><pre><span class="lineno"> 1</span> <span class="k">define</span> <span class="n">nginx</span><span class="p">::</span><span class="n">site</span><span class="p">(</span><span class="nv">$domain</span><span class="p">,</span> <span class="nv">$root</span><span class="p">)</span> <span class="p">{</span>
+<span class="lineno"> 2</span> 
+<span class="lineno"> 3</span>   <span class="n">file</span> <span class="p">{</span> <span class="nv">$root:</span>
+<span class="lineno"> 4</span>     <span class="n">ensure</span> <span class="o">=&gt;</span> <span class="n">directory</span><span class="p">,</span>
+<span class="lineno"> 5</span>   <span class="p">}</span>
+<span class="lineno"> 6</span> 
+<span class="lineno"> 7</span>   <span class="n">file</span> <span class="p">{</span> <span class="s2">&quot;/etc/nginx/sites-available/${name}.conf&quot;</span><span class="p">:</span>
+<span class="lineno"> 8</span>     <span class="n">ensure</span> <span class="o">=&gt;</span> <span class="n">present</span><span class="p">,</span>
+<span class="lineno"> 9</span>     <span class="n">content</span> <span class="o">=&gt;</span> <span class="n">template</span><span class="p">(</span><span class="s2">&quot;nginx/site.conf.erb&quot;</span><span class="p">),</span>
+<span class="lineno">10</span>     <span class="n">require</span> <span class="o">=&gt;</span> <span class="n">File</span><span class="p">[</span><span class="nv">$root</span><span class="p">],</span>
+<span class="lineno">11</span>     <span class="n">notify</span> <span class="o">=&gt;</span> <span class="n">Service</span><span class="p">[</span><span class="n">nginx</span><span class="p">],</span>
+<span class="lineno">12</span>   <span class="p">}</span>
+<span class="lineno">13</span> 
+<span class="lineno">14</span>   <span class="n">file</span> <span class="p">{</span> <span class="s2">&quot;/etc/nginx/sites-enabled/${name}.conf&quot;</span><span class="p">:</span>
+<span class="lineno">15</span>     <span class="n">ensure</span> <span class="o">=&gt;</span> <span class="n">link</span><span class="p">,</span>
+<span class="lineno">16</span>     <span class="n">target</span> <span class="o">=&gt;</span> <span class="s2">&quot;/etc/nginx/sites-available/${name}.conf&quot;</span><span class="p">,</span>
+<span class="lineno">17</span>     <span class="n">require</span> <span class="o">=&gt;</span> <span class="n">File</span><span class="p">[</span><span class="s2">&quot;/etc/nginx/sites-available/${name}.conf&quot;</span><span class="p">],</span>
+<span class="lineno">18</span>     <span class="n">notify</span> <span class="o">=&gt;</span> <span class="n">Service</span><span class="p">[</span><span class="n">nginx</span><span class="p">],</span>
+<span class="lineno">19</span>   <span class="p">}</span>
+<span class="lineno">20</span> 
+<span class="lineno">21</span> <span class="p">}</span>
+</pre></div>
+</section>
+            
+          </div>
+          <div class="presenter_notes">
+            <header></header>
+            <section>
+            
+            </section>
+          </div>
+          <footer>
+            
+            <aside class="source">
+              Source: <a href="slides.md">slides.md</a>
+            </aside>
+            
+            <aside class="page_number">
+              22/28
+            </aside>
+          </footer>
+        </div>
+      </div>
+      
+      <!-- slide source: slides.md -->
+      <div class="slide-wrapper">
+        <div class="slide has_code">
+          <div class="inner">
+            
+            
+            <section><p><code>site.conf.erb</code> for nginx::site resource:</p>
+<div class="highlight"><pre><span class="lineno"> 1</span> <span class="x">server {</span>
+<span class="lineno"> 2</span> <span class="x">  listen 80;</span>
+<span class="lineno"> 3</span> <span class="x">  server_name </span><span class="cp">&lt;%=</span> <span class="n">domain</span> <span class="cp">%&gt;</span><span class="x">;</span>
+<span class="lineno"> 4</span> 
+<span class="lineno"> 5</span> <span class="x">  access_log  /var/log/nginx/</span><span class="cp">&lt;%=</span> <span class="nb">name</span> <span class="cp">%&gt;</span><span class="x">.access.log;</span>
+<span class="lineno"> 6</span> 
+<span class="lineno"> 7</span> <span class="x">  location / {</span>
+<span class="lineno"> 8</span> <span class="x">    root </span><span class="cp">&lt;%=</span> <span class="n">root</span> <span class="cp">%&gt;</span><span class="x">;</span>
+<span class="lineno"> 9</span> <span class="x">    index  index.html;</span>
+<span class="lineno">10</span> <span class="x">  }</span>
+<span class="lineno">11</span> <span class="x">}</span>
+</pre></div>
+</section>
+            
+          </div>
+          <div class="presenter_notes">
+            <header></header>
+            <section>
+            
+            </section>
+          </div>
+          <footer>
+            
+            <aside class="source">
+              Source: <a href="slides.md">slides.md</a>
+            </aside>
+            
+            <aside class="page_number">
+              23/28
+            </aside>
+          </footer>
+        </div>
+      </div>
+      
+      <!-- slide source: slides.md -->
+      <div class="slide-wrapper">
+        <div class="slide has_code">
+          <div class="inner">
+            
+            <header><h1>Nodes</h1></header>
+            
+            
+            <section><p>Uses classes and invokes definitions from modules.</p>
+<div class="highlight"><pre><span class="lineno"> 1</span> <span class="k">node</span> <span class="k">default</span> <span class="p">{</span>
+<span class="lineno"> 2</span>   <span class="kn">include</span> <span class="n">ssh</span>
+<span class="lineno"> 3</span>   <span class="kn">include</span> <span class="n">git</span>
+<span class="lineno"> 4</span>   <span class="kn">include</span> <span class="n">timezone</span>
+<span class="lineno"> 5</span>   <span class="kn">include</span> <span class="n">java</span><span class="p">::</span><span class="n">oracle</span>
+<span class="lineno"> 6</span> <span class="p">}</span>
+<span class="lineno"> 7</span> 
+<span class="lineno"> 8</span> <span class="k">node</span> <span class="s2">&quot;mgmt.muda.no&quot;</span> <span class="k">inherits</span> <span class="k">default</span><span class="n">s</span> <span class="p">{</span>
+<span class="lineno"> 9</span>   <span class="kn">include</span> <span class="n">puppet</span><span class="p">::</span><span class="n">master</span>
+<span class="lineno">10</span>   <span class="kn">include</span> <span class="n">sonatype</span><span class="p">::</span><span class="n">nexus</span>
+<span class="lineno">11</span> <span class="p">}</span>
+</pre></div>
+</section>
+            
+          </div>
+          <div class="presenter_notes">
+            <header></header>
+            <section>
+            
+            </section>
+          </div>
+          <footer>
+            
+            <aside class="source">
+              Source: <a href="slides.md">slides.md</a>
+            </aside>
+            
+            <aside class="page_number">
+              24/28
+            </aside>
+          </footer>
+        </div>
+      </div>
+      
+      <!-- slide source: slides.md -->
+      <div class="slide-wrapper">
+        <div class="slide">
+          <div class="inner">
+            
+            <header><h1>Control Structures</h1></header>
+            
+            
+            <section><p>!puppet
+  if $ensure in [ running, stopped ] {
+    $ensure_real = $ensure
+  } else {
+    fail('ensure parameter must be running or stopped')
+  }</p>
+<p>!puppet
+  case $operatingsystem {
+    centos: {
+      $package_list = 'openssh-server'
+    }
+    solaris: {
+      $pacakge_list = [ SUNWsshr, SUNWsshu ]
+    }
+    default: {
+      fail("module $module_name does not support $operatingsystem")
+    }
+  }</p></section>
+            
+          </div>
+          <div class="presenter_notes">
+            <header></header>
+            <section>
+            
+            </section>
+          </div>
+          <footer>
+            
+            <aside class="source">
+              Source: <a href="slides.md">slides.md</a>
+            </aside>
+            
+            <aside class="page_number">
+              25/28
+            </aside>
+          </footer>
+        </div>
+      </div>
+      
+      <!-- slide source: slides.md -->
+      <div class="slide-wrapper">
+        <div class="slide">
+          <div class="inner">
+            
+            <header><h1>Facter</h1></header>
+            
+            
+            <section><p>Facter &mdash; gathers information from the host system &mdash; can be extended. List standard variables that can be used (such as $operationsystem).</p></section>
+            
+          </div>
+          <div class="presenter_notes">
+            <header></header>
+            <section>
+            
+            </section>
+          </div>
+          <footer>
+            
+            <aside class="source">
+              Source: <a href="slides.md">slides.md</a>
+            </aside>
+            
+            <aside class="page_number">
+              26/28
+            </aside>
+          </footer>
+        </div>
+      </div>
+      
+      <!-- slide source: slides.md -->
+      <div class="slide-wrapper">
+        <div class="slide">
+          <div class="inner">
+            
+            <header><h1>More</h1></header>
+            
+            
+            <section><ul>
+<li>Control structures (if, case)</li>
+<li>Ruby plugins for creating new functions or resource types</li>
+<li>Virtual resources.</li>
+<li>Exported resources.</li>
+<li>Separate environments (development, staging, production)</li>
+</ul></section>
+            
+          </div>
+          <div class="presenter_notes">
+            <header></header>
+            <section>
+            
+            </section>
+          </div>
+          <footer>
+            
+            <aside class="source">
+              Source: <a href="slides.md">slides.md</a>
+            </aside>
+            
+            <aside class="page_number">
+              27/28
+            </aside>
+          </footer>
+        </div>
+      </div>
+      
+      <!-- slide source: slides.md -->
+      <div class="slide-wrapper">
+        <div class="slide">
+          <div class="inner">
+            
+            <header><h1>Examples from the configuration</h1></header>
+            
+            
+            <section><p>4 Linode VPS instances (mgmt, node1, node2, db1)</p>
+<h2>Basic</h2>
+<p>yum, puppet agent, puppet-master, Users, SSH, Network, NTP, timezone, UFW, git</p>
+<h2>Servers</h2>
+<p>apache, mysql, java, nexus</p>
+<h2>Credits</h2>
+<p>Eivind Uggedal(uggedal) @uggedal</p></section>
+            
+          </div>
+          <div class="presenter_notes">
+            <header></header>
+            <section>
+            
+            </section>
+          </div>
+          <footer>
+            
+            <aside class="source">
+              Source: <a href="slides.md">slides.md</a>
+            </aside>
+            
+            <aside class="page_number">
+              28/28
+            </aside>
+          </footer>
+        </div>
+      </div>
+      
+    </div>
+  </div>
+  
+  <div id="toc" class="sidebar hidden">
+    <h2>Table of Contents</h2>
+    <table>
+      <caption>Table of Contents</caption>
+      
+      <tr id="toc-row-1">
+        <th><a href="#slide1">Declarative Configuration Management with&nbsp;Puppet</a></th>
+        <td><a href="#slide1">1</a></td>
+      </tr>
+      
+      
+      <tr id="toc-row-3">
+        <th><a href="#slide3">Users</a></th>
+        <td><a href="#slide3">3</a></td>
+      </tr>
+      
+      
+      <tr id="toc-row-4">
+        <th><a href="#slide4">Alternatives</a></th>
+        <td><a href="#slide4">4</a></td>
+      </tr>
+      
+      
+      <tr id="toc-row-5">
+        <th><a href="#slide5">Typical setup (client-server)</a></th>
+        <td><a href="#slide5">5</a></td>
+      </tr>
+      
+      
+      <tr id="toc-row-6">
+        <th><a href="#slide6">Typical setup (client-server)</a></th>
+        <td><a href="#slide6">6</a></td>
+      </tr>
+      
+      
+      <tr id="toc-row-7">
+        <th><a href="#slide7">Example code</a></th>
+        <td><a href="#slide7">7</a></td>
+      </tr>
+      
+      
+      <tr id="toc-row-8">
+        <th><a href="#slide8">Accept certificates / Sign nodes</a></th>
+        <td><a href="#slide8">8</a></td>
+      </tr>
+      
+      
+      <tr id="toc-row-9">
+        <th><a href="#slide9">Changes in 2.6.x</a></th>
+        <td><a href="#slide9">9</a></td>
+      </tr>
+      
+      
+      <tr id="toc-row-10">
+        <th><a href="#slide10">Resources</a></th>
+        <td><a href="#slide10">10</a></td>
+      </tr>
+      
+      
+      <tr id="toc-row-11">
+        <th><a href="#slide11">Running puppet code</a></th>
+        <td><a href="#slide11">11</a></td>
+      </tr>
+      
+      
+      <tr id="toc-row-12">
+        <th><a href="#slide12">Debugging puppet code</a></th>
+        <td><a href="#slide12">12</a></td>
+      </tr>
+      
+      
+      <tr id="toc-row-13">
+        <th><a href="#slide13">Different resource types</a></th>
+        <td><a href="#slide13">13</a></td>
+      </tr>
+      
+      
+      <tr id="toc-row-14">
+        <th><a href="#slide14">Generic resource types</a></th>
+        <td><a href="#slide14">14</a></td>
+      </tr>
+      
+      
+      <tr id="toc-row-15">
+        <th><a href="#slide15">Dependencies between resources</a></th>
+        <td><a href="#slide15">15</a></td>
+      </tr>
+      
+      
+      <tr id="toc-row-16">
+        <th><a href="#slide16">Templates and variables</a></th>
+        <td><a href="#slide16">16</a></td>
+      </tr>
+      
+      
+      <tr id="toc-row-18">
+        <th><a href="#slide18">Running puppet code with templates</a></th>
+        <td><a href="#slide18">18</a></td>
+      </tr>
+      
+      
+      <tr id="toc-row-19">
+        <th><a href="#slide19">Modules</a></th>
+        <td><a href="#slide19">19</a></td>
+      </tr>
+      
+      
+      <tr id="toc-row-20">
+        <th><a href="#slide20">Classes</a></th>
+        <td><a href="#slide20">20</a></td>
+      </tr>
+      
+      
+      <tr id="toc-row-21">
+        <th><a href="#slide21">Applying modules</a></th>
+        <td><a href="#slide21">21</a></td>
+      </tr>
+      
+      
+      <tr id="toc-row-22">
+        <th><a href="#slide22">Definitions</a></th>
+        <td><a href="#slide22">22</a></td>
+      </tr>
+      
+      
+      <tr id="toc-row-24">
+        <th><a href="#slide24">Nodes</a></th>
+        <td><a href="#slide24">24</a></td>
+      </tr>
+      
+      
+      <tr id="toc-row-25">
+        <th><a href="#slide25">Control Structures</a></th>
+        <td><a href="#slide25">25</a></td>
+      </tr>
+      
+      
+      <tr id="toc-row-26">
+        <th><a href="#slide26">Facter</a></th>
+        <td><a href="#slide26">26</a></td>
+      </tr>
+      
+      
+      <tr id="toc-row-27">
+        <th><a href="#slide27">More</a></th>
+        <td><a href="#slide27">27</a></td>
+      </tr>
+      
+      
+      <tr id="toc-row-28">
+        <th><a href="#slide28">Examples from the configuration</a></th>
+        <td><a href="#slide28">28</a></td>
+      </tr>
+      
+      
+    </table>
+  </div>
+  
+  <div id="help" class="sidebar hidden">
+    <h2>Help</h2>
+    <table>
+      <caption>Help</caption>
+      <tr>
+        <th>Table of Contents</th>
+        <td>t</td>
+      </tr>
+      <tr>
+        <th>Exposé</th>
+        <td>ESC</td>
+      </tr>
+      <tr>
+        <th>Presenter View</th>
+        <td>p</td>
+      </tr>
+      <tr>
+        <th>Source Files</th>
+        <td>s</td>
+      </tr>
+      <tr>
+        <th>Slide Numbers</th>
+        <td>n</td>
+      </tr>
+      <tr>
+        <th>Notes</th>
+        <td>2</td>
+      </tr>
+      <tr>
+        <th>Help</th>
+        <td>h</td>
+      </tr>
+    </table>
+  </div>
+  <script>main()</script>
+</body>
+</html>
